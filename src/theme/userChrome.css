@@ -1,0 +1,310 @@
+/* ============================================
+   Agentic Browser — Dualios Design System
+   Glassmorphism + Cosmic Dark Theme
+   ============================================ */
+
+:root {
+    /* Cosmic Scale */
+    --cosmic-700: #2B2B2E;
+    --cosmic-800: #1C1C1F;
+    --cosmic-900: #121212;
+    --cosmic-950: #050505;
+
+    /* Card / Glass */
+    --card-bg: rgba(0, 0, 0, 0.10);
+    --card-bg-elevated: rgba(18, 18, 20, 0.82);
+    --card-border: rgba(255, 255, 255, 0.15);
+    --card-border-elevated: rgba(255, 255, 255, 0.30);
+    --card-separator: rgba(255, 255, 255, 0.05);
+    --card-bg-subtle: rgba(40, 40, 40, 0.70);
+
+    /* Text */
+    --text-primary: rgba(255, 255, 255, 0.85);
+    --text-secondary: rgba(255, 255, 255, 0.55);
+    --text-placeholder: rgba(255, 255, 255, 0.25);
+
+    /* Brand */
+    --brand-500: #4087EA;
+    --brand-600: #1A6FE6;
+
+    /* Semantic */
+    --destructive: #FF4D4D;
+    --positive: #00FF85;
+
+    /* Radii */
+    --r-sm: 6px;
+    --r: 8px;
+    --r-lg: 12px;
+}
+
+/* --- Window Background --- */
+:root,
+#main-window,
+#browser {
+    background-color: var(--cosmic-950) !important;
+    -moz-appearance: none !important;
+}
+
+/* --- Title Bar --- */
+#titlebar {
+    background: transparent !important;
+}
+
+.titlebar-spacer { display: none !important; }
+
+/* --- Tab Bar (liquid-glass style) --- */
+#TabsToolbar {
+    background: var(--card-bg) !important;
+    border-bottom: 1px solid var(--card-border) !important;
+    padding: 4px 8px 0 8px !important;
+    -moz-appearance: none !important;
+}
+
+/* Remove default tab decorations */
+.tabbrowser-tab::after,
+.tabbrowser-tab::before {
+    display: none !important;
+}
+
+/* Tabs */
+.tabbrowser-tab {
+    -moz-appearance: none !important;
+    margin: 0 2px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+}
+
+.tab-background {
+    -moz-appearance: none !important;
+    border-radius: var(--r-lg) var(--r-lg) 0 0 !important;
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Active Tab — subtle white tint like liquid-glass hover */
+.tabbrowser-tab[selected="true"] .tab-background {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--card-border) !important;
+    border-bottom: none !important;
+}
+
+/* Hover Tab */
+.tabbrowser-tab:hover:not([selected="true"]) .tab-background {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-radius: var(--r-lg) var(--r-lg) 0 0 !important;
+}
+
+/* Tab Text */
+.tab-label {
+    color: var(--text-secondary) !important;
+    font-family: -apple-system, 'Segoe UI', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+
+.tabbrowser-tab[selected="true"] .tab-label {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+}
+
+/* Tab Close Button */
+.tab-close-button {
+    opacity: 0 !important;
+    transition: opacity 0.15s ease !important;
+    border-radius: var(--r-sm) !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.tabbrowser-tab:hover .tab-close-button {
+    opacity: 0.5 !important;
+}
+
+.tab-close-button:hover {
+    opacity: 1 !important;
+    background: rgba(255, 77, 77, 0.15) !important;
+}
+
+/* New Tab Button */
+#tabs-newtab-button,
+#new-tab-button {
+    -moz-appearance: none !important;
+    border-radius: var(--r) !important;
+    fill: var(--text-secondary) !important;
+}
+
+#tabs-newtab-button:hover,
+#new-tab-button:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* --- Navigation Toolbar (liquid-glass-elevated) --- */
+#navigator-toolbox {
+    background: transparent !important;
+    border-bottom: none !important;
+}
+
+#nav-bar {
+    background: var(--card-bg-elevated) !important;
+    border-bottom: 1px solid var(--card-border) !important;
+    padding: 4px 8px !important;
+    -moz-appearance: none !important;
+    box-shadow: none !important;
+}
+
+/* Nav Buttons */
+#back-button,
+#forward-button,
+#reload-button,
+#stop-button {
+    -moz-appearance: none !important;
+    border-radius: var(--r) !important;
+    padding: 6px !important;
+    margin: 0 1px !important;
+    color: var(--text-secondary) !important;
+    fill: var(--text-secondary) !important;
+}
+
+#back-button:hover,
+#forward-button:hover,
+#reload-button:hover,
+#stop-button:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    fill: var(--text-primary) !important;
+}
+
+/* --- URL Bar (matches Dualios input fields) --- */
+#urlbar-background {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: var(--r-lg) !important;
+    box-shadow: none !important;
+    -moz-appearance: none !important;
+}
+
+#urlbar[focused="true"] > #urlbar-background {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--brand-600) !important;
+    box-shadow: 0 0 0 1px rgba(26, 111, 230, 0.25) !important;
+}
+
+#urlbar-input {
+    color: var(--text-primary) !important;
+    font-family: 'IBM Plex Mono', monospace, -apple-system, sans-serif !important;
+    font-size: 13px !important;
+}
+
+::placeholder {
+    color: var(--text-placeholder) !important;
+}
+
+#urlbar-container {
+    margin: 0 8px !important;
+}
+
+/* --- All Toolbar Buttons --- */
+toolbarbutton {
+    -moz-appearance: none !important;
+    border-radius: var(--r) !important;
+}
+
+toolbarbutton:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+toolbarbutton .toolbarbutton-icon {
+    fill: var(--text-secondary) !important;
+}
+
+toolbarbutton:hover .toolbarbutton-icon {
+    fill: var(--text-primary) !important;
+}
+
+/* --- Hide Bookmarks Bar --- */
+#PersonalToolbar {
+    display: none !important;
+}
+
+/* --- Context Menus (liquid-glass-elevated) --- */
+menupopup,
+panel {
+    -moz-appearance: none !important;
+    background: var(--card-bg-elevated) !important;
+    border: 1px solid var(--card-border-elevated) !important;
+    border-radius: var(--r-lg) !important;
+    padding: 4px !important;
+    color: var(--text-primary) !important;
+}
+
+menuitem,
+menu {
+    -moz-appearance: none !important;
+    border-radius: var(--r) !important;
+    padding: 6px 12px !important;
+    color: var(--text-primary) !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+}
+
+menuitem:hover,
+menu:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+menuseparator {
+    border-color: var(--card-separator) !important;
+    margin: 2px 8px !important;
+}
+
+/* --- Scrollbars (thin, subtle) --- */
+* {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255,255,255,0.08) transparent !important;
+}
+
+/* --- Find Bar --- */
+.findbar-container {
+    background: var(--card-bg-elevated) !important;
+    border-top: 1px solid var(--card-border) !important;
+    color: var(--text-primary) !important;
+}
+
+.findbar-textbox {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: var(--r) !important;
+    color: var(--text-primary) !important;
+}
+
+/* --- Status Panel --- */
+#statuspanel-label {
+    background: var(--card-bg-elevated) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: var(--r) 0 0 0 !important;
+    color: var(--text-secondary) !important;
+    font-size: 11px !important;
+}
+
+/* --- Window Controls (macOS-style dots) --- */
+.titlebar-buttonbox {
+    -moz-appearance: none !important;
+}
+
+.titlebar-button {
+    -moz-appearance: none !important;
+    border-radius: 50% !important;
+    width: 12px !important;
+    height: 12px !important;
+    min-width: 12px !important;
+    min-height: 12px !important;
+    margin: 0 4px !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+.titlebar-close { background: var(--destructive) !important; }
+.titlebar-max { background: var(--positive) !important; }
+.titlebar-min { background: #F5B100 !important; }
+.titlebar-button:hover { opacity: 0.8 !important; }

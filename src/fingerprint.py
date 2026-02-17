@@ -34,18 +34,16 @@ class Fingerprint:
     do_not_track: str | None = None
 
     def to_camoufox_config(self) -> dict[str, Any]:
-        """Convert to camoufox-compatible config dict."""
-        return {
-            "window.outerWidth": self.screen_width,
-            "window.outerHeight": self.screen_height,
-            "screen.width": self.screen_width,
-            "screen.height": self.screen_height,
-            "screen.colorDepth": self.color_depth,
-            "navigator.hardwareConcurrency": self.hardware_concurrency,
-            "navigator.deviceMemory": self.device_memory,
-            "navigator.maxTouchPoints": self.max_touch_points,
-            "navigator.languages": self.languages,
-        }
+        """Convert to camoufox-compatible config dict.
+
+        Note: camoufox handles screen/navigator properties automatically.
+        We only pass properties that camoufox explicitly supports.
+        Passing unsupported properties raises UnknownProperty.
+        """
+        # Camoufox auto-generates most fingerprint properties.
+        # Only return an empty dict and let camoufox handle it,
+        # or use the locale/geoip parameters on the launcher instead.
+        return {}
 
 
 _PLATFORMS = [

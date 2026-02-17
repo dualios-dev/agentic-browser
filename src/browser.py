@@ -41,6 +41,62 @@ class StealthBrowser:
         self._context: BrowserContext | None = None
         self._page: Page | None = None
 
+    def _setup_themed_profile(self, profile_path: str) -> None:
+        """Pre-create a Firefox profile with custom theme and prefs."""
+        profile = Path(profile_path)
+
+        # Create chrome directory and copy userChrome.css
+        chrome_dir = profile / "chrome"
+        chrome_dir.mkdir(parents=True, exist_ok=True)
+
+        theme_src = Path(__file__).parent / "theme" / "userChrome.css"
+        if theme_src.exists():
+            import shutil
+            shutil.copy2(theme_src, chrome_dir / "userChrome.css")
+
+        # Write user.js with required prefs
+        user_js = profile / "user.js"
+        with open(user_js, "w") as f:
+            f.write('// Agentic Browser custom prefs\n')
+            f.write('user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);\n')
+            f.write('user_pref("browser.uidensity", 1);\n')  # Compact density
+            f.write('user_pref("browser.tabs.drawInTitlebar", true);\n')
+            f.write('user_pref("browser.chrome.site_icons", true);\n')
+
+        logger.info("Set up themed profile at %s", profile_path)
+
+    def _inject_theme(self) -> None:
+        """Copy custom userChrome.css into the browser profile for theming."""
+        theme_src = Path(__file__).parent / "theme" / "userChrome.css"
+        if not theme_src.exists():
+            return
+
+        # Find active playwright profile
+        import glob
+        profiles = sorted(
+            glob.glob("/tmp/playwright_firefoxdev_profile-*"),
+            key=lambda p: Path(p).stat().st_mtime,
+            reverse=True,
+        )
+        if not profiles:
+            return
+
+        chrome_dir = Path(profiles[0]) / "chrome"
+        chrome_dir.mkdir(exist_ok=True)
+        dest = chrome_dir / "userChrome.css"
+
+        import shutil
+        shutil.copy2(theme_src, dest)
+
+        # Enable userChrome.css loading via user.js
+        user_js = Path(profiles[0]) / "user.js"
+        prefs = 'user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);\n'
+        if not user_js.exists() or "legacyUserProfileCustomizations" not in user_js.read_text():
+            with open(user_js, "a") as f:
+                f.write(prefs)
+
+        logger.info("Injected custom theme into %s", profiles[0])
+
     async def launch(self) -> Page:
         """Launch the stealth browser and return the main page.
 
@@ -68,12 +124,16 @@ class StealthBrowser:
         default_proxy = proxy_config.get("default")
         proxy_setting = {"server": default_proxy} if default_proxy else None
 
-        # Launch via camoufox async context manager
-        camoufox_config = self.fingerprint.to_camoufox_config()
+        # Get locale from fingerprint config
+        fp_config = self.config.get("fingerprint", {})
+        locale = fp_config.get("locale", "en-US")
 
+        # Launch via camoufox async context manager
+        # Let camoufox auto-generate fingerprints (screen, navigator, etc.)
+        # We pass locale and geoip for timezone/geo consistency
         self._context_manager = AsyncCamoufox(
             headless=headless,
-            config=camoufox_config,
+            locale=locale,
             proxy=proxy_setting,
             geoip=True,
         )

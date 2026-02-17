@@ -43,6 +43,8 @@ _SUSPICIOUS_ATTRS = {"aria-hidden", "data-prompt", "data-instruction"}
 
 def _is_hidden(tag: Tag) -> bool:
     """Check if an HTML element is visually hidden."""
+    if not hasattr(tag, 'attrs') or tag.attrs is None:
+        return False
     style = tag.get("style", "")
     if isinstance(style, str):
         for pattern in _HIDDEN_PATTERNS:

@@ -110,6 +110,21 @@ guardrail:
   # Custom patterns to detect (regex)
   extra_patterns: []
 
+agent:
+  # Maximum steps per task
+  max_steps: 15
+  # LLM provider for the agent brain (gemini, anthropic, or openai)
+  llm_provider: "gemini"
+  # Model to use
+  llm_model: "gemini-2.0-flash"
+  # API key (set via env var GEMINI_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY)
+  api_key: null
+
+server:
+  # Dashboard server host and port
+  host: "0.0.0.0"
+  port: 8888
+
 logging:
   # Log level (DEBUG, INFO, WARNING, ERROR)
   level: "INFO"

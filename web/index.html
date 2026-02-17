@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Browser</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="top-bar">
+            <div class="logo">
+                <span class="logo-icon">🌐</span>
+                <span class="logo-text">Agentic Browser</span>
+            </div>
+            <div class="status-bar">
+                <span id="status-dot" class="status-dot offline"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content">
+            <!-- Left: Live Browser View -->
+            <section class="browser-panel">
+                <div class="panel-header">
+                    <span>🖥️ Live View</span>
+                    <div class="url-bar">
+                        <input type="text" id="url-input" placeholder="Enter URL..." />
+                        <button id="go-btn" class="btn btn-sm">Go</button>
+                    </div>
+                </div>
+                <div class="browser-view">
+                    <img id="screenshot" src="" alt="Browser view — waiting for connection..." />
+                    <div id="screenshot-placeholder" class="placeholder">
+                        <span>Waiting for browser...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Chat + Task Log -->
+            <section class="control-panel">
+                <!-- Chat -->
+                <div class="chat-section">
+                    <div class="panel-header">
+                        <span>💬 Agent Chat</span>
+                    </div>
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="message system">
+                            <span>Ready. Tell me what to do — I'll browse for you.</span>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="e.g. Search Google for the best restaurants in NYC..." />
+                        <button id="send-btn" class="btn btn-primary">Send</button>
+                    </div>
+                </div>
+
+                <!-- Task Log -->
+                <div class="task-section">
+                    <div class="panel-header">
+                        <span>📋 Task Steps</span>
+                        <button id="stop-btn" class="btn btn-sm btn-danger" style="display:none;">Stop</button>
+                    </div>
+                    <div id="task-steps" class="task-steps">
+                        <div class="empty-state">No tasks yet. Send a message above to start.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
