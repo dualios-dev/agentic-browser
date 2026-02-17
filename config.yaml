@@ -1,0 +1,119 @@
+# Agentic Browser Configuration
+
+browser:
+  # Headless mode (true for server, false for debugging)
+  headless: true
+  # Profile directory for persistent sessions (cookies, localStorage)
+  profile_dir: "./profiles/default"
+  # Default viewport
+  viewport:
+    width: 1920
+    height: 1080
+  # Page load timeout in ms
+  timeout: 30000
+  # Default user agent (null = auto-generated from fingerprint)
+  user_agent: null
+
+fingerprint:
+  # Locale for the browser (affects navigator.language, Accept-Language)
+  locale: "en-US"
+  # Timezone (should match proxy IP geolocation)
+  timezone: "America/New_York"
+  # Screen resolution options (randomly picked if not set)
+  screen_resolutions:
+    - [1920, 1080]
+    - [2560, 1440]
+    - [1536, 864]
+    - [1440, 900]
+  # WebGL vendor/renderer pairs (realistic combos)
+  webgl_pairs:
+    - vendor: "Google Inc. (NVIDIA)"
+      renderer: "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    - vendor: "Google Inc. (Intel)"
+      renderer: "ANGLE (Intel, Intel(R) UHD Graphics 630 Direct3D11 vs_5_0 ps_5_0, D3D11)"
+    - vendor: "Google Inc. (AMD)"
+      renderer: "ANGLE (AMD, AMD Radeon RX 580 Direct3D11 vs_5_0 ps_5_0, D3D11)"
+
+proxy:
+  # Default proxy (null = direct connection)
+  default: null
+  # Domain-based routing tiers
+  tiers:
+    high:
+      # High-security sites get mobile/residential proxy
+      proxy: null  # e.g. "socks5://user:pass@mobile-proxy:1080"
+      domains:
+        - "instagram.com"
+        - "twitter.com"
+        - "x.com"
+        - "tiktok.com"
+        - "facebook.com"
+    medium:
+      # Medium-risk sites get static residential
+      proxy: null  # e.g. "http://user:pass@resi-proxy:8080"
+      domains:
+        - "google.com"
+        - "youtube.com"
+        - "linkedin.com"
+        - "amazon.com"
+    low:
+      # Low-risk / internal — direct connection
+      proxy: null
+      domains: []
+
+humanize:
+  # Mouse movement speed range in ms (min, max)
+  mouse_speed: [80, 250]
+  # Typing delay range in ms per character (mean, stddev for gaussian)
+  typing_delay:
+    mean: 75
+    stddev: 25
+  # Scroll behavior
+  scroll:
+    # Pixels per scroll step (mean, stddev)
+    step_mean: 120
+    step_stddev: 40
+    # Delay between scroll steps in ms (mean, stddev)
+    delay_mean: 50
+    delay_stddev: 20
+  # Random micro-pauses between actions in ms (min, max)
+  action_pause: [200, 800]
+
+sanitizer:
+  # Maximum markdown output length in characters
+  max_length: 50000
+  # Remove these HTML tags entirely (content included)
+  strip_tags:
+    - "script"
+    - "style"
+    - "noscript"
+    - "iframe"
+    - "object"
+    - "embed"
+    - "svg"
+  # Remove elements with these CSS properties
+  strip_hidden: true
+  # Remove zero-width characters
+  strip_zero_width: true
+
+guardrail:
+  # Enable prompt injection scanning
+  enabled: true
+  # Use LLM for ambiguous cases (requires API key)
+  llm_enabled: false
+  # LLM provider (openai or anthropic)
+  llm_provider: "openai"
+  # API key (set via env var GUARDRAIL_API_KEY)
+  api_key: null
+  # Block or warn on detection
+  action: "warn"  # "block" or "warn"
+  # Custom patterns to detect (regex)
+  extra_patterns: []
+
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  level: "INFO"
+  # Log file path
+  file: "./logs/session.log"
+  # Log to console as well
+  console: true

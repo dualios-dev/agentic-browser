@@ -1,0 +1,6 @@
+camoufox[geoip]
+playwright
+beautifulsoup4
+markdownify
+pyyaml
+httpx
