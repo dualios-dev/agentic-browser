@@ -156,12 +156,20 @@ def instagram_api_login(username: str, password: str) -> dict[str, Any] | None:
 
     except Exception as e:
         error_msg = str(e)
+        checkpoint_url = None
         # Try to parse error response
         if hasattr(e, "read"):
             try:
                 err_body = json.loads(e.read())
                 error_msg = err_body.get("message", error_msg)
+                if error_msg == "checkpoint_required":
+                    checkpoint_url = err_body.get("checkpoint_url", "")
+                    logger.warning("Instagram checkpoint required: %s", checkpoint_url)
             except Exception:
                 pass
         logger.error("Instagram API login error: %s", error_msg)
-        return {"success": False, "error": error_msg}
+        result = {"success": False, "error": error_msg}
+        if checkpoint_url:
+            result["checkpoint_url"] = checkpoint_url
+            result["needs_verification"] = True
+        return result

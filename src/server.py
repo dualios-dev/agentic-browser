@@ -255,6 +255,20 @@ async def login_instagram(body: dict[str, Any]):
                 }
             return {"success": False, "error": "API login succeeded but no cookies returned"}
         
+        if result and result.get("needs_verification"):
+            # Navigate browser to checkpoint URL so user can verify
+            checkpoint_url = result.get("checkpoint_url", "")
+            if checkpoint_url and bridge:
+                logger.info("Navigating to Instagram checkpoint: %s", checkpoint_url)
+                await bridge.actions.navigate(checkpoint_url)
+            return {
+                "success": False,
+                "method": "api",
+                "error": "checkpoint_required",
+                "message": "Instagram requires verification from a new device. Check your email/SMS for a code. The browser has been navigated to the verification page — complete it via RDP (34.59.28.101:3389) or import cookies from a logged-in browser instead.",
+                "checkpoint_url": checkpoint_url,
+            }
+        
         # API failed — try web form as fallback
         api_error = result.get("error", "Unknown") if result else "No response"
         logger.warning("API login failed (%s), trying web form fallback", api_error)
