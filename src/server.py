@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .agent import BrowserAgent, AgentStep
 from .bridge import AgentBridge
+from .ig_api import instagram_api_login
 from .tasks import TaskManager, TaskStatus
 
 logger = logging.getLogger(__name__)
@@ -209,18 +210,117 @@ async def cancel_task(task_id: str):
     return {"status": "cancelled"}
 
 
+@app.get("/cookies")
+async def cookie_tool():
+    """Cookie import/export tool page."""
+    return FileResponse(WEB_DIR / "cookie-export.html")
+
+
 @app.post("/api/login/instagram")
 async def login_instagram(body: dict[str, Any]):
-    """Login to Instagram."""
+    """Login to Instagram via mobile API (bypasses web form detection).
+    
+    Falls back to web form login if API fails.
+    """
     username = body.get("username", "").strip()
     password = body.get("password", "").strip()
+    method = body.get("method", "api")  # "api" or "web"
+    
     if not username or not password:
         return {"error": "Username and password required"}, 400
     if not bridge:
         return {"error": "Browser not started"}, 500
     
+    if method == "api":
+        # Try mobile API login first (bypasses web form detection)
+        logger.info("Attempting Instagram login via mobile API")
+        result = await asyncio.get_event_loop().run_in_executor(
+            None, instagram_api_login, username, password
+        )
+        
+        if result and result.get("success"):
+            # Inject session cookies into browser
+            cookies = result.get("cookies", [])
+            if cookies:
+                context = bridge.browser.page.context
+                await bridge.browser.session_manager.import_cookies_from_json(context, cookies)
+                # Navigate to Instagram to activate the session
+                await bridge.actions.navigate("https://www.instagram.com/")
+                logger.info("Instagram API login successful — %d cookies injected", len(cookies))
+                return {
+                    "success": True,
+                    "method": "api",
+                    "username": result["user"]["username"],
+                    "cookies_injected": len(cookies),
+                }
+            return {"success": False, "error": "API login succeeded but no cookies returned"}
+        
+        # API failed — try web form as fallback
+        api_error = result.get("error", "Unknown") if result else "No response"
+        logger.warning("API login failed (%s), trying web form fallback", api_error)
+    
+    # Web form login (fallback)
     success = await bridge.actions.login_instagram(username, password)
-    return {"success": success, "username": username}
+    return {"success": success, "method": "web", "username": username}
+
+
+@app.post("/api/cookies/import")
+async def import_cookies(body: dict[str, Any]):
+    """Import cookies from JSON array. Bypasses login forms entirely."""
+    cookies = body.get("cookies", [])
+    filepath = body.get("file")
+    
+    if not bridge:
+        return {"error": "Browser not started"}, 500
+    
+    context = bridge.browser.page.context
+    sm = bridge.browser.session_manager
+    
+    try:
+        if filepath:
+            count = await sm.import_cookies_from_file(context, filepath)
+        elif cookies:
+            count = await sm.import_cookies_from_json(context, cookies)
+        else:
+            return {"error": "Provide 'cookies' array or 'file' path"}, 400
+        return {"imported": count, "status": "ok"}
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+
+@app.get("/api/cookies/export")
+async def export_cookies(domain: str = None):
+    """Export current browser cookies, optionally filtered by domain."""
+    if not bridge:
+        return {"error": "Browser not started"}, 500
+    
+    context = bridge.browser.page.context
+    sm = bridge.browser.session_manager
+    cookies = await sm.export_cookies(context, domain)
+    return {"cookies": cookies, "count": len(cookies)}
+
+
+@app.post("/api/cookies/save")
+async def save_cookies():
+    """Save current cookies to disk for persistence."""
+    if not bridge:
+        return {"error": "Browser not started"}, 500
+    
+    context = bridge.browser.page.context
+    count = await bridge.browser.session_manager.save_cookies(context)
+    return {"saved": count}
+
+
+@app.get("/api/session/status")
+async def session_status(platform: str = "instagram"):
+    """Check if logged into a platform."""
+    if not bridge:
+        return {"error": "Browser not started"}, 500
+    
+    logged_in = await bridge.browser.session_manager.check_login_status(
+        bridge.browser.page, platform
+    )
+    return {"platform": platform, "logged_in": logged_in}
 
 
 @app.post("/api/navigate")

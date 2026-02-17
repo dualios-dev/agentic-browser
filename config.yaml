@@ -2,7 +2,7 @@
 
 browser:
   # Headless mode (true for server, false for debugging)
-  headless: true
+  headless: false
   # Profile directory for persistent sessions (cookies, localStorage)
   profile_dir: "./profiles/default"
   # Default viewport

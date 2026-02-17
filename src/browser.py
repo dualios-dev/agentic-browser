@@ -15,6 +15,7 @@ from playwright.async_api import Browser, BrowserContext, Page
 
 from .fingerprint import Fingerprint, generate_fingerprint, fingerprint_hash
 from .proxy_router import ProxyRouter
+from .session import SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,9 @@ class StealthBrowser:
         self.browser_config = config.get("browser", {})
         self.fingerprint: Fingerprint | None = None
         self.proxy_router: ProxyRouter | None = None
+        self.session_manager = SessionManager(
+            self.browser_config.get("profile_dir", "./profiles/default")
+        )
         self._context_manager: Any = None
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
@@ -148,6 +152,15 @@ class StealthBrowser:
         self._page.set_default_timeout(timeout)
         self._page.set_default_navigation_timeout(timeout)
 
+        # Load saved cookies if available
+        try:
+            context = self._page.context
+            loaded = await self.session_manager.load_cookies(context)
+            if loaded > 0:
+                logger.info("Restored %d saved cookies", loaded)
+        except Exception as e:
+            logger.debug("Could not load saved cookies: %s", e)
+
         logger.info("Stealth browser launched successfully (headless=%s)", headless)
         return self._page
 
@@ -173,6 +186,14 @@ class StealthBrowser:
 
     async def close(self) -> None:
         """Close the browser and clean up resources."""
+        # Save cookies before closing
+        if self._page is not None:
+            try:
+                context = self._page.context
+                await self.session_manager.save_cookies(context)
+            except Exception as e:
+                logger.debug("Could not save cookies on close: %s", e)
+
         if self._context_manager is not None:
             try:
                 await self._context_manager.__aexit__(None, None, None)

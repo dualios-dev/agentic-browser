@@ -210,6 +210,9 @@ class BrowserActions:
                 try:
                     el = await self.page.query_selector(sel)
                     if el:
+                        await el.click()
+                        await self.page.keyboard.press("Control+A")
+                        await self.page.keyboard.press("Backspace")
                         await el.fill(username)
                         username_filled = True
                         logger.info("Filled username via: %s", sel)
@@ -222,12 +225,15 @@ class BrowserActions:
             
             await self.page.wait_for_timeout(500)
             
-            # Try password field
+            # Try password field — click, select all, then fill
             password_filled = False
             for sel in ['input[name="password"]', 'input[type="password"]']:
                 try:
                     el = await self.page.query_selector(sel)
                     if el:
+                        await el.click()
+                        await self.page.keyboard.press("Control+A")
+                        await self.page.keyboard.press("Backspace")
                         await el.fill(password)
                         password_filled = True
                         logger.info("Filled password via: %s", sel)
