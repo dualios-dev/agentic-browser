@@ -89,7 +89,7 @@ You receive:
 You respond with a JSON object containing:
 {
     "thought": "Your reasoning about what to do next",
-    "action": "one of: navigate, click, type, scroll, screenshot, extract, done, fail",
+    "action": "one of: navigate, click, type, submit, scroll, screenshot, extract, done, fail",
     "args": {
         // depends on the action:
         // navigate: {"url": "https://..."}
@@ -105,7 +105,13 @@ You respond with a JSON object containing:
 
 Rules:
 - Always explain your thinking in "thought"
-- Use CSS selectors for click/type (e.g., "input[name=q]", "#search-btn", "a[href*=login]")
+- Use CSS selectors for click/type (e.g., "textarea[name=q]", "#search-btn", "a[href*=login]")
+- Google Search uses textarea[name=q] (not input). For submitting, navigate to https://www.google.com/search?q=YOUR+QUERY is often faster than typing+clicking
+- Amazon: ALWAYS use direct URL https://www.amazon.com/s?k=YOUR+SEARCH+TERMS instead of typing in their search box (avoids bot detection)
+- If you see a "Continue shopping" or CAPTCHA page, click the continue button first
+- After typing in a search box, use the "submit" action to press Enter, or click the submit button
+- Prefer navigating directly via URL when possible (faster, more reliable)
+- For product pages, use navigate with the full URL instead of clicking links when possible
 - After typing in a search box, you often need to click search or press Enter — use click on the submit button or type with selector "body" and text "\\n" won't work; instead navigate or click
 - If the page doesn't have what you need, navigate somewhere else
 - If you're stuck after 3 attempts, use "fail"
@@ -263,6 +269,22 @@ class BrowserAgent:
         try:
             url = await self.actions.get_url()
             title = await self.actions.get_title()
+
+            # Auto-handle "Continue shopping" / CAPTCHA interstitial pages
+            try:
+                continue_btn = await self.actions.page.wait_for_selector(
+                    "input[value='Continue shopping'], a:has-text('Continue shopping'), button:has-text('Continue')",
+                    timeout=2000
+                )
+                if continue_btn:
+                    await continue_btn.click()
+                    logger.info("Auto-clicked 'Continue shopping' button")
+                    await asyncio.sleep(2)
+                    url = await self.actions.get_url()
+                    title = await self.actions.get_title()
+            except Exception:
+                pass  # No interstitial page, continue normally
+
             content = await self.actions.extract_content()
 
             # Run guardrail on content
@@ -418,6 +440,13 @@ class BrowserAgent:
             text = args.get("text", "")
             await self.actions.type_text(selector, text)
             return f"Typed '{text}' into {selector}"
+
+        elif action == "submit":
+            # Press Enter to submit a form
+            await self.actions.page.keyboard.press("Enter")
+            await asyncio.sleep(2)  # Wait for page load
+            content = await self.actions.extract_content()
+            return f"Pressed Enter to submit. Page content:\n{content[:2000]}"
 
         elif action == "scroll":
             direction = args.get("direction", "down")

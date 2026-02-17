@@ -100,7 +100,7 @@ _INJECTION_PATTERNS: list[tuple[str, re.Pattern[str], ThreatLevel]] = [
     (
         "jailbreak",
         re.compile(
-            r"(DAN|do\s+anything\s+now|developer\s+mode|pretend\s+you\s+have\s+no\s+(restrictions?|limitations?|rules?))",
+            r"(do\s+anything\s+now|developer\s+mode|pretend\s+you\s+have\s+no\s+(restrictions?|limitations?|rules?)|you\s+are\s+now\s+DAN)",
             re.IGNORECASE,
         ),
         ThreatLevel.DANGEROUS,

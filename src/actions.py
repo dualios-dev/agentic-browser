@@ -89,9 +89,30 @@ class BrowserActions:
             clear: Whether to clear existing content first.
         """
         logger.debug("Typing into: %s", selector)
-        element = await self.page.wait_for_selector(selector)
-        if element is None:
-            raise ValueError(f"Element not found: {selector}")
+        # Try the selector, then fallback alternatives for common inputs
+        try:
+            element = await self.page.wait_for_selector(selector, timeout=5000)
+        except Exception:
+            # Fallback: try common alternatives (Google changed input→textarea)
+            fallbacks = [
+                "textarea[name=q]", "input[name=q]", "textarea[title='Search']",
+                "input[title='Search']", "[role='combobox']", "[aria-label='Search']",
+                "#twotabsearchtextbox", "input[name='field-keywords']",
+                "#search-input", "input[type='search']", "input[placeholder*='Search']",
+                "input[aria-label*='Search']", "textarea[aria-label*='Search']",
+            ]
+            element = None
+            for fb in fallbacks:
+                try:
+                    element = await self.page.wait_for_selector(fb, timeout=3000)
+                    if element:
+                        selector = fb
+                        logger.info("Fallback selector matched: %s", fb)
+                        break
+                except Exception:
+                    continue
+            if element is None:
+                raise ValueError(f"Element not found: {selector} (tried fallbacks too)")
 
         # Click the field first
         await self.click_element(selector)
