@@ -112,7 +112,7 @@ guardrail:
 
 agent:
   # Maximum steps per task
-  max_steps: 15
+  max_steps: 30
   # LLM provider for the agent brain (gemini, anthropic, or openai)
   llm_provider: "gemini"
   # Model to use

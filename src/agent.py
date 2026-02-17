@@ -89,7 +89,7 @@ You receive:
 You respond with a JSON object containing:
 {
     "thought": "Your reasoning about what to do next",
-    "action": "one of: navigate, click, type, submit, scroll, screenshot, extract, done, fail",
+    "action": "one of: navigate, click, type, submit, scroll, screenshot, extract, login, done, fail",
     "args": {
         // depends on the action:
         // navigate: {"url": "https://..."}
@@ -98,6 +98,7 @@ You respond with a JSON object containing:
         // scroll: {"direction": "down|up", "distance": 500}
         // screenshot: {}
         // extract: {}
+        // login: {"platform": "instagram", "username": "...", "password": "..."}
         // done: {"summary": "what was accomplished"}
         // fail: {"reason": "why it failed"}
     }
@@ -454,6 +455,18 @@ class BrowserAgent:
             await self.actions.scroll_page(direction, distance)
             content = await self.actions.extract_content()
             return f"Scrolled {direction} {distance}px. Content:\n{content[:2000]}"
+
+        elif action == "login":
+            platform = args.get("platform", "instagram")
+            username = args.get("username", "")
+            password = args.get("password", "")
+            if platform == "instagram" and username and password:
+                success = await self.actions.login_instagram(username, password)
+                if success:
+                    content = await self.actions.extract_content()
+                    return f"Logged into Instagram as {username}. Page:\n{content[:2000]}"
+                return f"Instagram login failed for {username}"
+            return f"Login not supported for platform: {platform}"
 
         elif action == "screenshot":
             await self.actions.screenshot()

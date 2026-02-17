@@ -38,6 +38,7 @@ agent: BrowserAgent | None = None
 task_manager = TaskManager()
 connected_clients: list[WebSocket] = []
 _screenshot_task: asyncio.Task | None = None
+_task_lock: asyncio.Lock | None = None  # Ensure only one task runs at a time
 
 
 # --- WebSocket broadcasting ---
@@ -97,7 +98,8 @@ async def on_agent_step(step: AgentStep) -> None:
 @app.on_event("startup")
 async def startup() -> None:
     """Start the browser and screenshot loop on server start."""
-    global bridge, agent, _screenshot_task
+    global bridge, agent, _screenshot_task, _task_lock
+    _task_lock = asyncio.Lock()
 
     config_path = os.environ.get("AGENT_CONFIG", "config.yaml")
     bridge = AgentBridge.from_config(config_path)
@@ -207,6 +209,20 @@ async def cancel_task(task_id: str):
     return {"status": "cancelled"}
 
 
+@app.post("/api/login/instagram")
+async def login_instagram(body: dict[str, Any]):
+    """Login to Instagram."""
+    username = body.get("username", "").strip()
+    password = body.get("password", "").strip()
+    if not username or not password:
+        return {"error": "Username and password required"}, 400
+    if not bridge:
+        return {"error": "Browser not started"}, 500
+    
+    success = await bridge.actions.login_instagram(username, password)
+    return {"success": success, "username": username}
+
+
 @app.post("/api/navigate")
 async def navigate(body: dict[str, Any]):
     """Manually navigate the browser."""
@@ -260,7 +276,8 @@ async def websocket_endpoint(ws: WebSocket):
                     agent.stop()
 
     except WebSocketDisconnect:
-        connected_clients.remove(ws)
+        if ws in connected_clients:
+            connected_clients.remove(ws)
         logger.info("Client disconnected (%d remaining)", len(connected_clients))
     except Exception as e:
         logger.error("WebSocket error: %s", e)
@@ -271,34 +288,35 @@ async def websocket_endpoint(ws: WebSocket):
 # --- Task Runner ---
 
 async def _run_task(task_id: str) -> None:
-    """Run a task using the agent."""
-    task = task_manager.get_task(task_id)
-    if not task or not agent:
-        return
+    """Run a task using the agent (sequential — one at a time)."""
+    async with _task_lock:
+        task = task_manager.get_task(task_id)
+        if not task or not agent:
+            return
 
-    task_manager.start_task(task_id)
-    await broadcast({
-        "type": "task_started",
-        "task": task.to_dict(),
-    })
-
-    try:
-        result = await agent.run(task.goal)
-        task_manager.complete_task(task_id, result)
+        task_manager.start_task(task_id)
         await broadcast({
-            "type": "task_completed",
+            "type": "task_started",
             "task": task.to_dict(),
         })
-    except Exception as e:
-        logger.error("Task %s failed: %s", task_id, e)
-        task.status = TaskStatus.FAILED
-        task.error = str(e)
-        task.completed_at = time.time()
-        await broadcast({
-            "type": "task_failed",
-            "task": task.to_dict(),
-            "error": str(e),
-        })
+
+        try:
+            result = await agent.run(task.goal)
+            task_manager.complete_task(task_id, result)
+            await broadcast({
+                "type": "task_completed",
+                "task": task.to_dict(),
+            })
+        except Exception as e:
+            logger.error("Task %s failed: %s", task_id, e)
+            task.status = TaskStatus.FAILED
+            task.error = str(e)
+            task.completed_at = time.time()
+            await broadcast({
+                "type": "task_failed",
+                "task": task.to_dict(),
+                "error": str(e),
+            })
 
 
 def run_server(host: str = "0.0.0.0", port: int = 8888) -> None:
