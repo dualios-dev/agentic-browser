@@ -185,7 +185,7 @@ class BrowserActions:
         return await self.page.screenshot(path=path, full_page=full_page)
 
     async def login_instagram(self, username: str, password: str) -> bool:
-        """Log into Instagram.
+        """Log into Instagram using simple fill + Enter approach.
         
         Args:
             username: Instagram username.
@@ -195,43 +195,77 @@ class BrowserActions:
             True if login successful.
         """
         logger.info("Logging into Instagram as %s", username)
-        await self.page.goto("https://www.instagram.com/accounts/login/", wait_until="networkidle")
-        await self.page.wait_for_timeout(2000)
-        
-        # Type username
         try:
-            username_input = await self.page.wait_for_selector('input[name="username"]', timeout=10000)
-            await username_input.click()
-            await username_input.fill(username)
-            await random_pause(300, 600)
+            # Navigate to IG
+            try:
+                await self.page.goto("https://www.instagram.com/", wait_until="networkidle", timeout=30000)
+            except Exception:
+                await self.page.goto("https://www.instagram.com/", wait_until="load", timeout=15000)
+            await self.page.wait_for_timeout(3000)
             
-            # Type password
-            password_input = await self.page.wait_for_selector('input[name="password"]', timeout=5000)
-            await password_input.click()
-            await password_input.fill(password)
-            await random_pause(300, 600)
+            # Use Playwright's fill with aria labels (most reliable)
+            # Try username field
+            username_filled = False
+            for sel in ['input[name="username"]', 'input[type="text"]', '[aria-label*="username" i]', '[aria-label*="phone" i]', '[aria-label*="email" i]']:
+                try:
+                    el = await self.page.query_selector(sel)
+                    if el:
+                        await el.fill(username)
+                        username_filled = True
+                        logger.info("Filled username via: %s", sel)
+                        break
+                except Exception:
+                    continue
             
-            # Click login button
-            login_btn = await self.page.wait_for_selector('button[type="submit"]', timeout=5000)
-            await login_btn.click()
+            if not username_filled:
+                raise ValueError("Could not find/fill username field")
             
-            # Wait for navigation
-            await self.page.wait_for_timeout(5000)
+            await self.page.wait_for_timeout(500)
+            
+            # Try password field
+            password_filled = False
+            for sel in ['input[name="password"]', 'input[type="password"]']:
+                try:
+                    el = await self.page.query_selector(sel)
+                    if el:
+                        await el.fill(password)
+                        password_filled = True
+                        logger.info("Filled password via: %s", sel)
+                        break
+                except Exception:
+                    continue
+            
+            if not password_filled:
+                raise ValueError("Could not find/fill password field")
+            
+            await self.page.wait_for_timeout(500)
+            
+            # Press Enter to submit (most reliable — doesn't need button to be visible)
+            await self.page.keyboard.press("Enter")
+            logger.info("Pressed Enter to submit login")
+            
+            # Wait for navigation/response
+            await self.page.wait_for_timeout(8000)
             
             # Check if logged in
             current_url = self.page.url
-            if "login" not in current_url.lower():
-                logger.info("Instagram login successful")
-                # Dismiss "Save login info" or "Turn on notifications" popups
+            logger.info("Post-login URL: %s", current_url)
+            
+            if "login" not in current_url.lower() and "challenge" not in current_url.lower():
+                logger.info("Instagram login successful!")
+                # Dismiss popups
                 for btn_text in ["Not Now", "Not now"]:
                     try:
-                        btn = await self.page.wait_for_selector(f'button:has-text("{btn_text}")', timeout=3000)
+                        btn = await self.page.query_selector(f'button:has-text("{btn_text}")')
                         if btn:
                             await btn.click()
-                            await self.page.wait_for_timeout(1000)
+                            await self.page.wait_for_timeout(2000)
                     except Exception:
                         pass
                 return True
+            elif "challenge" in current_url.lower():
+                logger.warning("Instagram security challenge detected — may need manual intervention")
+                return False
             else:
                 logger.error("Instagram login failed — still on login page")
                 return False
